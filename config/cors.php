@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sales', 'products'],
+    'paths' => ['api/*', 'sales', 'products', 'expenses', 'goal', 'monthly'],
 
     /*
     |--------------------------------------------------------------------------

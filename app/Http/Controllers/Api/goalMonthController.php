@@ -10,54 +10,37 @@ use App\Models\GoalMonth;
 class GoalMonthController extends Controller
 {
     public function index()
-{
-    $products = Product::all();
-    $totalPrice = $products->sum('price');
-    $defaultGoalValue = $totalPrice + ($totalPrice * 0.2);
-
-    $goal = GoalMonth::first();
-    if (!$goal) {
-        $goal = GoalMonth::create(['goal_value' => $defaultGoalValue]);
+    {
+        $products = Product::all();
+        $totalPrice = $products->sum('price');
+        $goal = GoalMonth::first();
+        if (!$goal) {
+            $goal = GoalMonth::create(['goal_value' => 0]);
+        }
+        return response()->json([
+            'total_price' => $totalPrice,
+            'goal_value'  => $goal->goal_value,
+        ]);
     }
 
-    return response()->json([
-        'total_price' => $totalPrice,
-        'goal_value'  => $goal->goal_value,
-    ]);
-}
+    public function store(Request $request)
+    {
+        $request->validate([
+            'value' => 'required|numeric|min:0',
+        ]);
 
+        $goal = GoalMonth::first();
+        if (!$goal) {
+            return response()->json(['message' => 'Meta não encontrada.'], 404);
+        }
 
-public function store(Request $request)
-{
-    $request->validate([
-        'value' => 'required|numeric|min:0',
-    ]);
+        $inputValue = $request->input('value');
+        $goal->goal_value = $goal->goal_value + $inputValue;
+        $goal->save();
 
-    $goal = GoalMonth::first();
-    if (!$goal) {
-        return response()->json(['message' => 'Meta não encontrada.'], 404);
+        return response()->json([
+            'message'    => 'Meta atualizada com sucesso!',
+            'goal_value' => $goal->goal_value,
+        ]);
     }
-
-    $products = Product::all();
-    $totalPrice = $products->sum('price');
-    $defaultGoalValue = $totalPrice + ($totalPrice * 0.2);
-
-    $inputValue = $request->input('value');
-    $newGoalValue = $goal->goal_value - $inputValue;
-
-    if ($newGoalValue < 0) {
-        $excess = abs($newGoalValue);
-        $newGoalValue = $defaultGoalValue + $excess;
-    }
-
-    $goal->goal_value = $newGoalValue;
-    $goal->save();
-
-    return response()->json([
-        'message'    => 'Meta atualizada com sucesso!',
-        'goal_value' => $goal->goal_value,
-    ]);
-}
-
-
 }

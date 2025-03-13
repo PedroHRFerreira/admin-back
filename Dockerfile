@@ -23,7 +23,7 @@ WORKDIR /var/www/html
 COPY . .
 
 # Copia o arquivo .env para o contêiner
-COPY .env .env
+COPY .env.example .env
 
 # Instala as dependências do Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist

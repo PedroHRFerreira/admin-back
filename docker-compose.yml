@@ -22,7 +22,7 @@ services:
         networks:
             - laravel
         ports:
-            - "3000:3000"
+            - "8080:80"
 
 networks:
     laravel:

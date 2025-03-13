@@ -22,6 +22,9 @@ WORKDIR /var/www/html
 # Copia todos os arquivos do projeto para o container
 COPY . .
 
+# Copia o arquivo .env para o contêiner
+COPY .env .env
+
 # Instala as dependências do Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 

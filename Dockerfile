@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd
 
+# Define o ServerName para suprimir o erro "Could not reliably determine the server's fully qualified domain name"
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Copia o Composer da imagem oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

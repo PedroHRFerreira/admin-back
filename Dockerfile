@@ -1,7 +1,6 @@
-# Imagem base com PHP 8.2 e Apache
 FROM php:8.2-apache
 
-# Atualiza pacotes e instala dependências necessárias para o Laravel
+# Instalação de dependências e extensões PHP necessárias
 RUN apt-get update && apt-get install -y \
     libonig-dev \
     libzip-dev \
@@ -13,41 +12,33 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd
 
-# Copia o Composer da imagem oficial
+# Instala o Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Define o diretório de trabalho
+# Configura Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN a2enmod rewrite
+RUN service apache2 restart
+
+# Diretório de trabalho
 WORKDIR /var/www/html
 
-# Copia todos os arquivos do projeto para o container
+# Copia arquivos do projeto para o container
 COPY . .
 
-# Copia o arquivo .env para o contêiner
-COPY .env.example .env
-
-# Instala as dependências do Composer
+# Instala dependências do Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
-# Gera a chave da aplicação (caso ainda não exista)
+# Gera chave da aplicação
 RUN php artisan key:generate
-
-# Otimiza o cache de configuração e de rotas
 RUN php artisan config:cache
 RUN php artisan route:cache
 
-# Cria os diretórios necessários para o Laravel
-RUN mkdir -p /var/www/html/storage
-RUN mkdir -p /var/www/html/bootstrap/cache
-
-# Ajusta as permissões para os diretórios de armazenamento e cache
+# Ajuste de permissões
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Adiciona ServerName no Apache para evitar warnings
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Expõe a porta 80 (padrão do Apache)
+# Expondo a porta padrão 80
 EXPOSE 80
 
-# Comando para iniciar o Apache
 CMD ["apache2-foreground"]

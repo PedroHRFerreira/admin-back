@@ -13,9 +13,6 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd
 
-# Definir o nome do servidor para evitar erros de "Could not reliably determine the server's fully qualified domain name"
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
 # Copia o Composer da imagem oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -28,9 +25,6 @@ COPY . .
 # Copia o arquivo .env para o contêiner
 COPY .env.example .env
 
-# Cria as pastas necessárias para o Laravel
-RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache
-
 # Instala as dependências do Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
@@ -41,9 +35,16 @@ RUN php artisan key:generate
 RUN php artisan config:cache
 RUN php artisan route:cache
 
+# Cria os diretórios necessários para o Laravel
+RUN mkdir -p /var/www/html/storage
+RUN mkdir -p /var/www/html/bootstrap/cache
+
 # Ajusta as permissões para os diretórios de armazenamento e cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Adiciona ServerName no Apache para evitar warnings
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Expõe a porta 80 (padrão do Apache)
 EXPOSE 80

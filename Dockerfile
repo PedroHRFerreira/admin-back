@@ -1,3 +1,4 @@
+# Usa a imagem oficial do PHP com Apache
 FROM php:8.2-apache
 
 # Instalação de dependências e extensões PHP necessárias
@@ -15,31 +16,40 @@ RUN apt-get update && apt-get install -y \
 # Instala o Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configura Apache
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+# Ativa o mod_rewrite do Apache para suportar URLs amigáveis do Laravel
 RUN a2enmod rewrite
-RUN service apache2 restart
 
-# Diretório de trabalho
+# Define o diretório de trabalho dentro do container
 WORKDIR /var/www/html
 
-# Copia arquivos do projeto para o container
+# Copia os arquivos do projeto para o container
 COPY . .
+
+# Define o DocumentRoot para a pasta public do Laravel
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+
+# Ajusta permissões necessárias para o Laravel
+RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+
+# Copia o arquivo .env.example para .env
 COPY .env.example .env
 
-# Instala dependências do Composer
+# Instala as dependências do Composer
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
-# Gera chave da aplicação
+# Gera a chave da aplicação Laravel
 RUN php artisan key:generate
+
+# Cache de configurações e rotas para melhor desempenho
 RUN php artisan config:cache
 RUN php artisan route:cache
 
-# Ajuste de permissões
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Reinicia o Apache para aplicar mudanças
+RUN service apache2 restart
 
-# Expondo a porta padrão 80
+# Expõe a porta padrão do Apache
 EXPOSE 80
 
+# Comando para iniciar o Apache no foreground
 CMD ["apache2-foreground"]
